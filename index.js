@@ -49,6 +49,7 @@ async function startWorking({shouldLog = true} = {}) {
     await sleep(SECOND); // this kills 2 ssd units in a year for my laptop
     timer = Date.now() - startTime;
     currentTime = initialTimestamp - timer;
+    console.info(toDate(currentTime));
     if (currentTime < 0) {
       logEvent('You have finished this weak work. Starting next weak.');
       writeTimeToFile(weakTime);
