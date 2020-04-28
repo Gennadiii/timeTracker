@@ -4,7 +4,7 @@ const ioHook = require('iohook');
 const say = require('say')
 
 
-const fileIdentifier = `---timeTracker`;
+const fileIdentifier = `timeTracker`;
 const currentSequence = Array(3);
 const SECOND = 1000;
 const MINUTE = SECOND * 60;
@@ -89,13 +89,14 @@ function getFile() {
       return `${homeDir}/${this.name}`;
     },
     get initialTime() {
-      return this.name.replace(fileIdentifier, '');
+      return this.name.replace(fileIdentifier, '').replace('---', '').replace('+++', '');
     }
   };
 }
 
 function writeTimeToFile(time) {
-  const newPath = `${getFile().pathToFile}/${toDate(time)}${fileIdentifier}`;
+  const workingIdentifier = working ? '+++' : '---';
+  const newPath = `${getFile().pathToFile}/${toDate(time)}${workingIdentifier}${fileIdentifier}`;
   fs.renameSync(getFile().fullPath, newPath);
   fs.writeFileSync(newPath, new Date());
 }
