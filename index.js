@@ -9,13 +9,21 @@ const currentSequence = Array(3);
 const SECOND = 1000;
 const MINUTE = SECOND * 60;
 const HOUR = MINUTE * 60;
-const weakTime = 40 * HOUR;
+const dayTime = 8 * HOUR;
+const weakTime = 5 * dayTime;
 const writeFileTimout = HOUR / 2;
+const day = {
+  5: `понедельник`,
+  4: `вторник`,
+  3: `среду`,
+  2: `четверг`,
+}
 let working = true;
 let timer = 0;
 let startTime = null;
 let initialTimestamp = null;
 let currentTime = null;
+let currentDay = null;
 
 void async function main() {
   if (!isTrackFileExists()) {
@@ -39,7 +47,7 @@ ioHook.on('keydown', async event => {
 ioHook.start();
 
 async function startWorking({shouldLog = true} = {}) {
-  shouldLog && logEvent('STARTING WORK');
+  shouldLog && logEvent('Начинай работать');
   let writeTimeToFileCounter = 0;
   initialTimestamp = toTimestamp(getFile().initialTime);
   working = true;
@@ -49,11 +57,18 @@ async function startWorking({shouldLog = true} = {}) {
     await sleep(SECOND); // this kills 2 ssd units in a year for my laptop
     timer = Date.now() - startTime;
     currentTime = initialTimestamp - timer;
+    if (!currentDay) {
+      currentDay = Math.floor(currentTime / dayTime) + 1;
+    }
     console.info(toDate(currentTime));
     if (currentTime < 0) {
-      logEvent('You have finished this weak work. Starting next weak.');
+      logEvent('Ты отработал эту неделю. Начинаешь следующую.');
       writeTimeToFile(weakTime);
       return startWorking({shouldLog: false});
+    }
+    if ((currentTime / dayTime) < currentDay - 1) {
+      logEvent(`На ${day[currentDay]} фатит`);
+      currentDay -= 1;
     }
     if (Math.floor(timer / writeFileTimout) === writeTimeToFileCounter) {
       writeTimeToFile(currentTime);
@@ -67,7 +82,7 @@ function isTrackFileExists() {
 }
 
 function stopWorking() {
-  logEvent('STOPPING WORK');
+  logEvent('Заканчивай работать');
   working = false;
   writeTimeToFile(currentTime);
 }
