@@ -54,13 +54,14 @@ async function startWorking({shouldLog = true} = {}) {
   startTime = Date.now();
   timer = 0;
   while (working) {
-    await sleep(SECOND); // this kills 2 ssd units in a year for my laptop
+    await sleep(SECOND);
     timer = Date.now() - startTime;
     currentTime = initialTimestamp - timer;
     if (!currentDay) {
       currentDay = Math.floor(currentTime / dayTime) + 1;
     }
-    console.info(toDate(currentTime));
+    const leftToWorkToday = toDate(currentTime % dayTime);
+    console.info(`${toDate(currentTime)} - ${leftToWorkToday}`);
     if (currentTime < 0) {
       logEvent('Ты отработал эту неделю. Начинаешь следующую.');
       writeTimeToFile(weakTime);
@@ -71,7 +72,7 @@ async function startWorking({shouldLog = true} = {}) {
       currentDay -= 1;
     }
     if (Math.floor(timer / writeFileTimout) === writeTimeToFileCounter) {
-      writeTimeToFile(currentTime);
+      writeTimeToFile(currentTime); // this kills 2 ssd units in a year for my laptop
       writeTimeToFileCounter++;
     }
   }
