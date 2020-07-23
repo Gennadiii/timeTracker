@@ -60,8 +60,8 @@ async function startWorking({shouldLog = true} = {}) {
     if (!currentDay) {
       currentDay = Math.floor(currentTime / dayTime) + 1;
     }
-    const leftToWorkToday = toDate(currentTime % dayTime);
-    console.info(`${toDate(currentTime)} - ${leftToWorkToday}`);
+    const leftToWorkToday = currentTime % dayTime;
+    console.info(`${toDate(currentTime)} - ${toDate(leftToWorkToday)} - ${toDate(getCurrentTime() + leftToWorkToday)}`);
     if (currentTime < 0) {
       logEvent('Ты отработал эту неделю. Начинаешь следующую.');
       writeTimeToFile(weakTime);
@@ -133,4 +133,9 @@ function toTimestamp(date) {
 
 function sleep(timeout) {
   return new Promise(resolve => setTimeout(resolve, timeout));
+}
+
+function getCurrentTime() {
+  const date = new Date();
+  return date.getHours() * HOUR + date.getMinutes() * MINUTE + date.getSeconds() * SECOND;
 }
