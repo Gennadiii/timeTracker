@@ -1,8 +1,10 @@
 const fs = require('fs');
 const os = require('os');
-const ioHook = require('iohook');
+// const ioHook = require('iohook');
 const say = require('say')
-
+const readline = require('readline');
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
 
 const fileIdentifier = `timeTracker`;
 const currentSequence = Array(3);
@@ -13,10 +15,10 @@ const dayTime = 8 * HOUR;
 const weakTime = 5 * dayTime;
 const writeFileTimout = HOUR / 2;
 const day = {
-  5: `понедельник`,
-  4: `вторник`,
-  3: `среду`,
-  2: `четверг`,
+  5: `понеділок`,
+  4: `вівторок`,
+  3: `середу`,
+  2: `четвер`,
 }
 let working = true;
 let timer = 0;
@@ -24,6 +26,7 @@ let startTime = null;
 let initialTimestamp = null;
 let currentTime = null;
 let currentDay = null;
+let isListening = false;
 
 void async function main() {
   if (!isTrackFileExists()) {
@@ -32,22 +35,44 @@ void async function main() {
   await startWorking();
 }();
 
-ioHook.on('keydown', async event => {
-  const startSequence = '295631'; // ctrl alt s
-  const endSequence = '295616'; // ctrl alt q
-  currentSequence.push(event.keycode);
-  currentSequence.shift();
-  if (currentSequence.join('') === endSequence) {
-    stopWorking();
+process.stdin.on('keypress', async (str, key) => {
+  if (key?.meta && key?.name === 'z') {
+    isListening = true;
   }
-  if (currentSequence.join('') === startSequence) {
-    await startWorking();
+  if (isListening) {
+    if (!key.meta && key.name === 's') {
+      isListening = false;
+      await startWorking();
+    }
+    if (!key.meta && key.name === 'q') {
+      isListening = false;
+      stopWorking();
+    }
+  } else {
+    isListening = false;
+  }
+  if (key?.meta && key?.name === 's') {
+    isListening = false;
   }
 });
-ioHook.start();
+
+
+// ioHook.on('keydown', async event => {
+//   const startSequence = '295631'; // ctrl alt s
+//   const endSequence = '295616'; // ctrl alt q
+//   currentSequence.push(event.keycode);
+//   currentSequence.shift();
+//   if (currentSequence.join('') === endSequence) {
+//     stopWorking();
+//   }
+//   if (currentSequence.join('') === startSequence) {
+//     await startWorking();
+//   }
+// });
+// ioHook.start();
 
 async function startWorking({shouldLog = true} = {}) {
-  shouldLog && logEvent('Начинай работать');
+  shouldLog && logEvent('Починай працювати');
   let writeTimeToFileCounter = 0;
   initialTimestamp = toTimestamp(getFile().initialTime);
   working = true;
@@ -63,12 +88,12 @@ async function startWorking({shouldLog = true} = {}) {
     const leftToWorkToday = currentTime % dayTime;
     console.info(`${toDate(currentTime)} - ${toDate(leftToWorkToday)} - ${toDate(getCurrentTime() + leftToWorkToday)}`);
     if (currentTime < 0) {
-      logEvent('Ты отработал эту неделю. Начинаешь следующую.');
+      logEvent('Ти відпрацював цей тиждень. Починаєш наступний.');
       writeTimeToFile(weakTime);
       return startWorking({shouldLog: false});
     }
     if ((currentTime / dayTime) < currentDay - 1) {
-      logEvent(`На ${day[currentDay]} фатит`);
+      logEvent(`На ${day[currentDay]} годі`);
       currentDay -= 1;
     }
     if (Math.floor(timer / writeFileTimout) === writeTimeToFileCounter) {
@@ -83,7 +108,7 @@ function isTrackFileExists() {
 }
 
 function stopWorking() {
-  logEvent('Заканчивай работать');
+  logEvent('Припиняй працювати');
   working = false;
   writeTimeToFile(currentTime);
 }
@@ -94,7 +119,7 @@ function logEvent(message) {
 }
 
 function getFile() {
-  const homeDir = `${os.homedir()}/Desktop`;
+  const homeDir = `${os.homedir()}/OneDrive/Рабочий стол`;
   const allFiles = fs.readdirSync(homeDir);
   return {
     pathToFile: homeDir,
@@ -114,7 +139,7 @@ function writeTimeToFile(time) {
   const workingIdentifier = working ? '+++' : '---';
   const newPath = `${getFile().pathToFile}/${toDate(time)}${workingIdentifier}${fileIdentifier}`;
   fs.renameSync(getFile().fullPath, newPath);
-  fs.writeFileSync(newPath, new Date());
+  fs.writeFileSync(newPath, String(new Date()));
 }
 
 function toDate(time) {
