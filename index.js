@@ -20,6 +20,12 @@ const day = {
   3: `середу`,
   2: `четвер`,
 }
+const phrases = {
+  startWorking: 'start working',
+  stopWorking: 'stop working',
+  weekEnded: 'you have finished this week. Starting the next one',
+  dayEnded: day => `It's enough for ${day}`,
+};
 let working = true;
 let timer = 0;
 let startTime = null;
@@ -72,7 +78,7 @@ process.stdin.on('keypress', async (str, key) => {
 // ioHook.start();
 
 async function startWorking({shouldLog = true} = {}) {
-  shouldLog && logEvent('Починай працювати');
+  shouldLog && logEvent(phrases.startWorking);
   let writeTimeToFileCounter = 0;
   initialTimestamp = toTimestamp(getFile().initialTime);
   working = true;
@@ -88,12 +94,12 @@ async function startWorking({shouldLog = true} = {}) {
     const leftToWorkToday = currentTime % dayTime;
     console.info(`${toDate(currentTime)} - ${toDate(leftToWorkToday)} - ${toDate(getCurrentTime() + leftToWorkToday)}`);
     if (currentTime < 0) {
-      logEvent('Ти відпрацював цей тиждень. Починаєш наступний.');
+      logEvent(phrases.weekEnded);
       writeTimeToFile(weakTime);
       return startWorking({shouldLog: false});
     }
     if ((currentTime / dayTime) < currentDay - 1) {
-      logEvent(`На ${day[currentDay]} годі`);
+      logEvent(phrases.dayEnded(day[currentDay]));
       currentDay -= 1;
     }
     if (Math.floor(timer / writeFileTimout) === writeTimeToFileCounter) {
@@ -108,7 +114,7 @@ function isTrackFileExists() {
 }
 
 function stopWorking() {
-  logEvent('Припиняй працювати');
+  logEvent(phrases.stopWorking);
   working = false;
   writeTimeToFile(currentTime);
 }
