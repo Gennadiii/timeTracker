@@ -16,10 +16,10 @@ const dayTime = 8 * HOUR;
 const weakTime = 5 * dayTime;
 const writeFileTimout = HOUR / 2;
 const day = {
-  5: `понеділок`,
-  4: `вівторок`,
-  3: `середу`,
-  2: `четвер`,
+  5: `Monday`,
+  4: `Tuesday`,
+  3: `Wednesday`,
+  2: `Thursday`,
 }
 const phrases = {
   startWorking: 'start working',
