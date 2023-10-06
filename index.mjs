@@ -34,32 +34,51 @@ let initialTimestamp = null;
 let currentTime = null;
 let currentDay = null;
 let isListening = false;
+let isSubtractionMode = false;
+let subtractionArr = [];
 
 void async function main() {
   if (!isTrackFileExists()) {
-    fs.writeFileSync(`${getFile().pathToFile}/${toDate(weakTime)}${fileIdentifier}`);
+    fs.writeFileSync(`${getFile().pathToFile}/${toDate(weakTime)}${fileIdentifier}`, '');
   }
   await startWorking();
 }();
 
 process.stdin.on('keypress', async (str, key) => {
-  if (key?.meta && key?.name === 'z') {
+  const keys = {
+    startListening: key?.meta && key?.name === 'z',
+    startWorking: !key.meta && key.name === 's',
+    stopWorking: !key.meta && key.name === 'q',
+    enterSubtractionMode: !key.meta && str === '-',
+    exitSubtractionMode: str === '\r',
+  }
+  if (keys.startListening) {
     isListening = true;
   }
-  if (isListening) {
-    if (!key.meta && key.name === 's') {
-      isListening = false;
-      await startWorking();
-    }
-    if (!key.meta && key.name === 'q') {
-      isListening = false;
-      stopWorking();
-    }
-  } else {
-    isListening = false;
+  if (!isListening) {
+    return;
   }
-  if (key?.meta && key?.name === 's') {
+  if (keys.startWorking) {
     isListening = false;
+    await startWorking();
+  }
+  if (keys.stopWorking) {
+    isListening = false;
+    stopWorking();
+  }
+  if (keys.enterSubtractionMode) {
+    isSubtractionMode = true;
+  }
+  if (isSubtractionMode) {
+    str && !keys.exitSubtractionMode && subtractionArr.push(str);
+  }
+  if (keys.exitSubtractionMode) {
+    isSubtractionMode = false;
+    isListening = false;
+    stopWorking({shouldLog: false});
+    adjustTime();
+    await sleep(2000);
+    await startWorking({shouldLog: false});
   }
 });
 
@@ -77,6 +96,29 @@ process.stdin.on('keypress', async (str, key) => {
 //   }
 // });
 // ioHook.start();
+
+function adjustTime() {
+  try {
+    if (subtractionArr[0] === '-' && subtractionArr[1] === '-') {
+      subtractionArr = subtractionArr.slice(2);
+    }
+    const chosenTime = subtractionArr.join('');
+    subtractionArr = [];
+    const timeToAdd = Number(chosenTime) * HOUR;
+    if (isNaN(timeToAdd)) {
+      throw new Error(`wrong time inserted: ${chosenTime}`);
+    }
+    const currentTime = getFile().initialTime;
+    const newTime = toTimestamp(currentTime) + timeToAdd;
+    logEvent(`Adding ${chosenTime} hours`);
+    writeTimeToFile(newTime);
+  } catch (err) {
+    logEvent(`Failed to adjust time`);
+    console.log(`-`.repeat(30));
+    console.log(err);
+    console.log(`-`.repeat(30));
+  }
+}
 
 async function startWorking({shouldLog = true} = {}) {
   shouldLog && logEvent(phrases.startWorking);
@@ -114,8 +156,8 @@ function isTrackFileExists() {
   return Boolean(getFile().name);
 }
 
-function stopWorking() {
-  logEvent(phrases.stopWorking);
+function stopWorking({shouldLog = true} = {}) {
+  shouldLog && logEvent(phrases.stopWorking);
   working = false;
   writeTimeToFile(currentTime);
 }
